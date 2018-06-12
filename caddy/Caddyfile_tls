@@ -1,0 +1,17 @@
+domain.com {
+  gzip
+  tls your_mail@domain.com
+  tls {
+    protocols tls1.0 tls1.2
+  }
+  root /srv
+  proxy / web:8000 {
+    transparent
+    except /media /static
+  }
+  log /var/log/access.log {
+    rotate_size 100
+    rotate_age 14
+    rotate_keep 10
+  }
+}
