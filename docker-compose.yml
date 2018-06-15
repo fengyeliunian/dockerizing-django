@@ -1,47 +1,53 @@
-web:
-  restart: always
-  build: ./web
-  expose:
-    - 8000
-  links:
-    - postgres:postgres
-    - redis:redis
-  volumes:
-    - ./web:/usr/src/app
-  env_file: .env
-  environment:
-    DEBUG: 'true'
-  command: /usr/local/bin/gunicorn docker_django.wsgi -w 2 -k eventlet -b :8000
+version: '3.3'
 
-caddy:
-  restart: always
-  image: abiosoft/caddy
-  environment:
-    ACME_AGREE: "true"
-  ports:
-    - 80:80
-  volumes:
-    - ./web:/srv
-    - ./caddy/Caddyfile:/etc/Caddyfile
-    - ./caddy:/root/.caddy
-    - ./caddy:/var/log
-  links:
-    - web:web
+services:
+  web:
+    restart: always
+    build: ./web
+    depends_on:
+      - postgres
+      - redis
+      - caddy
+    expose:
+      - 8000
+    volumes:
+      - ./web:/usr/src/app
+    env_file: .env
+    environment:
+      DEBUG: 'true'
+    command: python manage.py runserver 0.0.0.0:8000
 
-postgres:
-  restart: always
-  image: postgres:latest
-  environment:
-    - POSTGRES_PASSWORD=postgres
-  ports:
-    - 5432
-  volumes:
-    - pgdata:/var/lib/postgresql/data/
+  caddy:
+    restart: always
+    image: abiosoft/caddy
+    environment:
+      ACME_AGREE: "true"
+    ports:
+      - 80:80
+    volumes:
+      - ./web:/srv
+      - ./caddy/Caddyfile:/etc/Caddyfile
+      - ./caddy:/root/.caddy
+      - ./caddy:/var/log
 
-redis:
-  restart: always
-  image: redis:latest
-  ports:
-    - 6379
-  volumes:
-    - redisdata:/data
+  postgres:
+    restart: always
+    image: postgres:latest
+    environment:
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - 5432
+    volumes:
+      - pgdata:/var/lib/postgresql/data/
+
+  redis:
+    restart: always
+    image: redis:latest
+    ports:
+      - 6379
+    volumes:
+      - redisdata:/data
+
+volumes:
+  pgdata:
+  redisdata:
